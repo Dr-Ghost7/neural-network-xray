@@ -33,8 +33,7 @@ yarn-error.log*
 next-env.d.ts
 
 # python
-data/
-**/data/
+/scripts/data/
 scripts/data/
 __pycache__/
 *.pyc
