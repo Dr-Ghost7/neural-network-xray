@@ -2,16 +2,18 @@
 
 import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { OrbitControls, Text, Float } from '@react-three/drei';
+import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { useNetworkStore } from '@/lib/store/useNetworkStore';
 
-// Color definitions
-const COLOR_IDLE = new THREE.Color('#1e293b');
-const COLOR_CYAN = new THREE.Color('#00f0ff');
-const COLOR_AMBER = new THREE.Color('#f59e0b');
-const COLOR_ROSE = new THREE.Color('#f43f5e');
-const COLOR_EMERALD = new THREE.Color('#10b981');
+// Purple and Blue palette
+const COLOR_IDLE = new THREE.Color('#0e1322');       // Deep obsidian indigo
+const COLOR_BLUE = new THREE.Color('#3b82f6');       // Cobalt blue
+const COLOR_INDIGO = new THREE.Color('#6366f1');     // Electric indigo
+const COLOR_VIOLET = new THREE.Color('#8b5cf6');     // Electric violet
+const COLOR_PURPLE = new THREE.Color('#c084fc');     // Glowing purple/lavender
+const COLOR_SEVERED = new THREE.Color('#f43f5e');    // Ablation rose/magenta
+const COLOR_SELECTED = new THREE.Color('#ffffff');   // White focus
 
 export const Network3DScene: React.FC = () => {
   const {
@@ -22,18 +24,14 @@ export const Network3DScene: React.FC = () => {
     setSelectedNeuron,
   } = useNetworkStore();
 
-  // Mesh and Buffer references
   const inputMeshRef = useRef<THREE.InstancedMesh | null>(null);
   const h1MeshRef = useRef<THREE.InstancedMesh | null>(null);
   const h2MeshRef = useRef<THREE.InstancedMesh | null>(null);
   const linesRef = useRef<THREE.LineSegments | null>(null);
 
-  // Temporary Three.js math objects to avoid GC allocation during render loop
-  const tempMatrix = useMemo(() => new THREE.Matrix4(), []);
   const tempColor = useMemo(() => new THREE.Color(), []);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
-  // 1. Calculate positions for all layers
   // Layer 0: 784 input pixels (28x28 grid in Y-Z plane at X = -14)
   const inputPositions = useMemo(() => {
     const pos: [number, number, number][] = [];
@@ -41,7 +39,6 @@ export const Network3DScene: React.FC = () => {
     const offset = (28 * spacing) / 2;
     for (let y = 0; y < 28; y++) {
       for (let x = 0; x < 28; x++) {
-        // Center the 28x28 grid
         pos.push([-14, offset - y * spacing, x * spacing - offset]);
       }
     }
@@ -86,7 +83,7 @@ export const Network3DScene: React.FC = () => {
     return pos;
   }, []);
 
-  // Setup initial instance transforms
+  // Set up instance matrices
   useEffect(() => {
     if (inputMeshRef.current) {
       inputPositions.forEach((p, i) => {
@@ -119,18 +116,18 @@ export const Network3DScene: React.FC = () => {
     }
   }, [inputPositions, h1Positions, h2Positions, dummy]);
 
-  // Frame update: Update instance colors and synaptic connections smoothly
+  // Frame update
   useFrame(() => {
-    // 1. Update Input Nodes
+    // 1. Input layer color updates (Blue)
     if (inputMeshRef.current) {
       for (let i = 0; i < 784; i++) {
         const val = processedPixels[i] || 0;
         const isSelected = selectedNeuron?.layer === 'input' && selectedNeuron.index === i;
 
         if (isSelected) {
-          tempColor.set(COLOR_AMBER);
+          tempColor.copy(COLOR_SELECTED);
         } else if (val > 0.05) {
-          tempColor.lerpColors(COLOR_IDLE, COLOR_CYAN, Math.min(1.0, val * 1.4));
+          tempColor.lerpColors(COLOR_IDLE, COLOR_BLUE, Math.min(1.0, val * 1.5));
         } else {
           tempColor.copy(COLOR_IDLE);
         }
@@ -141,20 +138,20 @@ export const Network3DScene: React.FC = () => {
       }
     }
 
-    // 2. Update Hidden Layer 1 Nodes
+    // 2. Hidden Layer 1 updates (Indigo / Violet)
     if (h1MeshRef.current && result) {
       const h1Act = result.activations.hidden1;
       for (let i = 0; i < 64; i++) {
         const isDamaged = damagedNeurons.hidden1.has(i);
         const isSelected = selectedNeuron?.layer === 'hidden1' && selectedNeuron.index === i;
-        const act = Math.min(1.0, (h1Act[i] || 0) * 0.4);
+        const act = Math.min(1.0, (h1Act[i] || 0) * 0.45);
 
         if (isDamaged) {
-          tempColor.set(COLOR_ROSE);
+          tempColor.copy(COLOR_SEVERED);
         } else if (isSelected) {
-          tempColor.set(COLOR_AMBER);
+          tempColor.copy(COLOR_SELECTED);
         } else if (act > 0.05) {
-          tempColor.lerpColors(COLOR_IDLE, COLOR_CYAN, act);
+          tempColor.lerpColors(COLOR_IDLE, COLOR_INDIGO, act);
         } else {
           tempColor.copy(COLOR_IDLE);
         }
@@ -165,20 +162,20 @@ export const Network3DScene: React.FC = () => {
       }
     }
 
-    // 3. Update Hidden Layer 2 Nodes
+    // 3. Hidden Layer 2 updates (Violet / Purple)
     if (h2MeshRef.current && result) {
       const h2Act = result.activations.hidden2;
       for (let i = 0; i < 32; i++) {
         const isDamaged = damagedNeurons.hidden2.has(i);
         const isSelected = selectedNeuron?.layer === 'hidden2' && selectedNeuron.index === i;
-        const act = Math.min(1.0, (h2Act[i] || 0) * 0.4);
+        const act = Math.min(1.0, (h2Act[i] || 0) * 0.45);
 
         if (isDamaged) {
-          tempColor.set(COLOR_ROSE);
+          tempColor.copy(COLOR_SEVERED);
         } else if (isSelected) {
-          tempColor.set(COLOR_AMBER);
+          tempColor.copy(COLOR_SELECTED);
         } else if (act > 0.05) {
-          tempColor.lerpColors(COLOR_IDLE, COLOR_EMERALD, act);
+          tempColor.lerpColors(COLOR_IDLE, COLOR_PURPLE, act);
         } else {
           tempColor.copy(COLOR_IDLE);
         }
@@ -189,12 +186,12 @@ export const Network3DScene: React.FC = () => {
       }
     }
 
-    // 4. Update Dynamic Synapses (Lines between active nodes)
+    // 4. Dynamic Synapse Filaments (Blue -> Violet -> Purple gradient)
     if (linesRef.current && result) {
       const linePositions: number[] = [];
       const lineColors: number[] = [];
 
-      // A. Active input pixels to active H1 nodes (top connections only to guarantee 60fps)
+      // A. Input pixels -> H1
       const activeInputs: number[] = [];
       for (let i = 0; i < 784; i++) {
         if (processedPixels[i] > 0.35) activeInputs.push(i);
@@ -207,7 +204,6 @@ export const Network3DScene: React.FC = () => {
         }
       }
 
-      // Sample representative connections
       for (let i = 0; i < Math.min(activeInputs.length, 30); i++) {
         const inIdx = activeInputs[i];
         const p1 = inputPositions[inIdx];
@@ -217,12 +213,12 @@ export const Network3DScene: React.FC = () => {
           const p2 = h1Positions[h1Idx];
 
           linePositions.push(p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
-          // Cyan synaptic tint with alpha-like falloff
-          lineColors.push(0.0, 0.7, 0.9, 0.0, 0.9, 1.0);
+          // Blue to Violet filament
+          lineColors.push(0.23, 0.51, 0.96, 0.54, 0.36, 0.96);
         }
       }
 
-      // B. Active H1 nodes to active H2 nodes
+      // B. H1 -> H2
       const activeH2: number[] = [];
       for (let k = 0; k < 32; k++) {
         if (!damagedNeurons.hidden2.has(k) && result.activations.hidden2[k] > 0.3) {
@@ -235,17 +231,19 @@ export const Network3DScene: React.FC = () => {
         for (let k = 0; k < Math.min(activeH2.length, 8); k++) {
           const p2 = h2Positions[activeH2[k]];
           linePositions.push(p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
-          lineColors.push(0.0, 0.9, 0.8, 0.1, 0.9, 0.5);
+          // Violet to Purple filament
+          lineColors.push(0.54, 0.36, 0.96, 0.75, 0.52, 0.98);
         }
       }
 
-      // C. Active H2 nodes to predicted Output node
+      // C. H2 -> Output
       const predIdx = result.prediction;
       const outP = outputPositions[predIdx];
       for (let k = 0; k < activeH2.length; k++) {
         const p2 = h2Positions[activeH2[k]];
         linePositions.push(p2[0], p2[1], p2[2], outP[0], outP[1], outP[2]);
-        lineColors.push(0.1, 0.8, 0.5, 0.0, 1.0, 0.8);
+        // Purple to Lavender filament into winning digit
+        lineColors.push(0.75, 0.52, 0.98, 0.88, 0.75, 1.0);
       }
 
       const geom = linesRef.current.geometry;
@@ -257,34 +255,34 @@ export const Network3DScene: React.FC = () => {
 
   return (
     <>
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[10, 20, 15]} intensity={0.9} />
-      <pointLight position={[-14, 0, 0]} intensity={1.5} color="#00f0ff" distance={20} />
-      <pointLight position={[14, 0, 0]} intensity={1.5} color="#10b981" distance={20} />
+      <ambientLight intensity={0.45} color="#1e1b4b" />
+      <directionalLight position={[12, 18, 14]} intensity={0.9} color="#f8fafc" />
+      <pointLight position={[-14, 0, 0]} intensity={1.6} color="#3b82f6" distance={22} />
+      <pointLight position={[14, 0, 0]} intensity={1.8} color="#a855f7" distance={22} />
 
       <OrbitControls
         enableDamping
-        dampingFactor={0.05}
-        maxDistance={50}
-        minDistance={8}
+        dampingFactor={0.06}
+        maxDistance={48}
+        minDistance={9}
         target={[0, 0, 0]}
       />
 
-      {/* Layer Labels */}
-      <Text position={[-14, 6, 0]} fontSize={0.6} color="#64748b" anchorX="center">
-        INPUT (784)
+      {/* Elegant, low-profile layer markers */}
+      <Text position={[-14, 6.2, 0]} fontSize={0.52} color="#64748b" anchorX="center" font={undefined}>
+        INPUT · 784
       </Text>
-      <Text position={[-5, 5, 0]} fontSize={0.6} color="#64748b" anchorX="center">
-        HIDDEN 1 (64)
+      <Text position={[-5, 5.2, 0]} fontSize={0.52} color="#6366f1" anchorX="center" font={undefined}>
+        HIDDEN · 64
       </Text>
-      <Text position={[5, 5.5, 0]} fontSize={0.6} color="#64748b" anchorX="center">
-        HIDDEN 2 (32)
+      <Text position={[5, 5.6, 0]} fontSize={0.52} color="#8b5cf6" anchorX="center" font={undefined}>
+        HIDDEN · 32
       </Text>
-      <Text position={[14, 6.5, 0]} fontSize={0.6} color="#64748b" anchorX="center">
-        OUTPUT (10)
+      <Text position={[14, 6.6, 0]} fontSize={0.52} color="#c084fc" anchorX="center" font={undefined}>
+        OUTPUT · 10
       </Text>
 
-      {/* 1. Input Layer Mesh (Instanced) */}
+      {/* 1. Input Layer Mesh */}
       <instancedMesh
         ref={inputMeshRef}
         args={[undefined, undefined, 784]}
@@ -297,13 +295,13 @@ export const Network3DScene: React.FC = () => {
       >
         <sphereGeometry args={[0.11, 8, 8]} />
         <meshStandardMaterial
-          roughness={0.3}
-          metalness={0.7}
-          emissiveIntensity={0.6}
+          roughness={0.25}
+          metalness={0.75}
+          emissiveIntensity={0.7}
         />
       </instancedMesh>
 
-      {/* 2. Hidden Layer 1 Mesh (Instanced) */}
+      {/* 2. Hidden Layer 1 Mesh */}
       <instancedMesh
         ref={h1MeshRef}
         args={[undefined, undefined, 64]}
@@ -318,11 +316,11 @@ export const Network3DScene: React.FC = () => {
         <meshStandardMaterial
           roughness={0.2}
           metalness={0.8}
-          emissiveIntensity={0.8}
+          emissiveIntensity={0.85}
         />
       </instancedMesh>
 
-      {/* 3. Hidden Layer 2 Mesh (Instanced) */}
+      {/* 3. Hidden Layer 2 Mesh */}
       <instancedMesh
         ref={h2MeshRef}
         args={[undefined, undefined, 32]}
@@ -337,11 +335,11 @@ export const Network3DScene: React.FC = () => {
         <meshStandardMaterial
           roughness={0.2}
           metalness={0.8}
-          emissiveIntensity={0.8}
+          emissiveIntensity={0.9}
         />
       </instancedMesh>
 
-      {/* 4. Output Layer (Individual Meshes with Digit Labels) */}
+      {/* 4. Output Layer */}
       {outputPositions.map((pos, i) => {
         const isPredicted = result?.prediction === i;
         const isDamaged = damagedNeurons.output.has(i);
@@ -349,11 +347,11 @@ export const Network3DScene: React.FC = () => {
 
         let nodeColor = COLOR_IDLE;
         if (isDamaged) {
-          nodeColor = COLOR_ROSE;
+          nodeColor = COLOR_SEVERED;
         } else if (isPredicted) {
-          nodeColor = COLOR_CYAN;
+          nodeColor = COLOR_PURPLE;
         } else if (prob > 0.15) {
-          nodeColor = COLOR_AMBER;
+          nodeColor = COLOR_BLUE;
         }
 
         return (
@@ -364,21 +362,20 @@ export const Network3DScene: React.FC = () => {
                 setSelectedNeuron({ layer: 'output', index: i });
               }}
             >
-              <sphereGeometry args={[isPredicted ? 0.44 : 0.34, 16, 16]} />
+              <sphereGeometry args={[isPredicted ? 0.44 : 0.32, 16, 16]} />
               <meshStandardMaterial
                 color={nodeColor}
                 emissive={nodeColor}
-                emissiveIntensity={isPredicted ? 1.0 : isDamaged ? 0.7 : 0.2}
-                roughness={0.2}
-                metalness={0.8}
+                emissiveIntensity={isPredicted ? 1.2 : isDamaged ? 0.8 : 0.25}
+                roughness={0.15}
+                metalness={0.85}
               />
             </mesh>
 
-            {/* Glowing Digit Label next to the node */}
             <Text
-              position={[0.8, 0, 0]}
+              position={[0.85, 0, 0]}
               fontSize={0.48}
-              color={isPredicted ? '#00f0ff' : isDamaged ? '#f43f5e' : '#94a3b8'}
+              color={isPredicted ? '#c084fc' : isDamaged ? '#f43f5e' : '#64748b'}
               anchorX="left"
               anchorY="middle"
             >
@@ -388,13 +385,13 @@ export const Network3DScene: React.FC = () => {
         );
       })}
 
-      {/* Synaptic Filaments / Connection Lines */}
+      {/* Dynamic Synaptic Filaments */}
       <lineSegments ref={linesRef}>
         <bufferGeometry />
         <lineBasicMaterial
           vertexColors
           transparent
-          opacity={0.55}
+          opacity={0.65}
           blending={THREE.AdditiveBlending}
         />
       </lineSegments>

@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useNetworkStore } from '@/lib/store/useNetworkStore';
-import { Eraser, Crosshair, Zap, RotateCcw, PenTool } from 'lucide-react';
+import { Crosshair, Zap, RotateCcw } from 'lucide-react';
 
 export const DigitCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -23,7 +23,7 @@ export const DigitCanvas: React.FC = () => {
     result,
   } = useNetworkStore();
 
-  const CANVAS_SIZE = 280; // 10x visual zoom for 28x28
+  const CANVAS_SIZE = 280;
   const GRID_SIZE = 28;
   const SCALE = CANVAS_SIZE / GRID_SIZE;
 
@@ -34,7 +34,7 @@ export const DigitCanvas: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.fillStyle = '#05070f';
+    ctx.fillStyle = '#05060b';
     ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
     for (let y = 0; y < GRID_SIZE; y++) {
@@ -42,14 +42,14 @@ export const DigitCanvas: React.FC = () => {
         const val = px[y * GRID_SIZE + x];
         if (val > 0.01) {
           const brightness = Math.min(255, Math.floor(val * 255));
-          ctx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness})`;
+          // Subtle cool white/lavender stroke tone
+          ctx.fillStyle = `rgb(${brightness}, ${Math.floor(brightness * 0.96)}, ${Math.floor(brightness * 1.05)})`;
           ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
         }
       }
     }
   }, [CANVAS_SIZE, SCALE]);
 
-  // Update visual canvas whenever pixels change (e.g., clear, adversarial, presets)
   useEffect(() => {
     drawFromPixels(pixels);
   }, [pixels, drawFromPixels]);
@@ -65,15 +65,14 @@ export const DigitCanvas: React.FC = () => {
     for (let i = 0; i < 784; i++) {
       const val = Math.floor(processedPixels[i] * 255);
       const idx = i * 4;
-      imgData.data[idx] = val;     // R
-      imgData.data[idx + 1] = val; // G
-      imgData.data[idx + 2] = val; // B
-      imgData.data[idx + 3] = 255; // A
+      imgData.data[idx] = val;
+      imgData.data[idx + 1] = Math.floor(val * 0.95);
+      imgData.data[idx + 2] = Math.min(255, Math.floor(val * 1.15));
+      imgData.data[idx + 3] = 255;
     }
     pCtx.putImageData(imgData, 0, 0);
   }, [processedPixels]);
 
-  // Handle continuous stroke drawing directly onto 784-element Float32Array
   const applyBrush = (gridX: number, gridY: number) => {
     const newPixels = new Float32Array(pixels);
     const radius = brushRadius;
@@ -128,7 +127,6 @@ export const DigitCanvas: React.FC = () => {
     if (!coords) return;
 
     if (lastPoint) {
-      // Interpolate points for smooth stroke continuity
       const dist = Math.hypot(coords.gridX - lastPoint.x, coords.gridY - lastPoint.y);
       const steps = Math.max(1, Math.ceil(dist * 2));
       for (let s = 1; s <= steps; s++) {
@@ -149,28 +147,24 @@ export const DigitCanvas: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col bg-surface-900/90 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-xl shadow-2xl">
-      <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-col bg-[#0b0e19] border border-white/[0.07] rounded-2xl p-5 shadow-2xl">
+      <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-            <PenTool size={18} />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-white tracking-wide">Input Canvas</h3>
-            <p className="text-xs text-slate-400">Draw a digit (0–9) to classify</p>
-          </div>
+          <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]" />
+          <h3 className="text-xs font-mono font-medium tracking-wider text-slate-300 uppercase">
+            Drawing Surface
+          </h3>
         </div>
 
-        {/* Real-time Latency badge */}
         {result && (
-          <span className="text-[11px] font-mono px-2 py-1 rounded bg-slate-800/80 border border-slate-700/50 text-cyan-300">
+          <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-violet-950/40 border border-violet-500/20 text-violet-300">
             {result.latencyMs} ms
           </span>
         )}
       </div>
 
       {/* Main Drawing Area */}
-      <div className="relative mx-auto my-1 rounded-xl overflow-hidden border border-slate-700/60 shadow-inner group">
+      <div className="relative mx-auto my-1 rounded-xl overflow-hidden border border-white/[0.08] shadow-inner group">
         <canvas
           ref={canvasRef}
           width={CANVAS_SIZE}
@@ -186,26 +180,28 @@ export const DigitCanvas: React.FC = () => {
           style={{ width: CANVAS_SIZE, height: CANVAS_SIZE }}
         />
 
-        {/* Subtle grid lines overlay */}
-        <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:28px_28px]" />
+        {/* Tactile drafting crosshairs */}
+        <div className="absolute top-2 left-2 text-[10px] font-mono text-white/10 pointer-events-none select-none">+</div>
+        <div className="absolute top-2 right-2 text-[10px] font-mono text-white/10 pointer-events-none select-none">+</div>
+        <div className="absolute bottom-2 left-2 text-[10px] font-mono text-white/10 pointer-events-none select-none">+</div>
 
-        {/* Mini 28x28 normalized input preview */}
-        <div className="absolute bottom-2 right-2 flex flex-col items-center bg-slate-950/80 border border-slate-800/80 p-1.5 rounded-lg shadow-lg">
+        {/* Normalized 28x28 feed thumbnail */}
+        <div className="absolute bottom-2 right-2 flex flex-col items-center bg-[#070912]/90 border border-white/10 p-1.5 rounded-lg shadow-lg">
           <canvas
             ref={previewCanvasRef}
             width={28}
             height={28}
-            className="w-10 h-10 border border-slate-700/50 rounded image-rendering-pixelated"
+            className="w-9 h-9 border border-white/10 rounded image-rendering-pixelated"
             title="MNIST 28x28 normalized input"
           />
-          <span className="text-[9px] font-mono text-slate-400 mt-1">28x28 fed</span>
+          <span className="text-[8px] font-mono text-slate-400 mt-1 uppercase tracking-tight">Normalized</span>
         </div>
       </div>
 
       {/* Brush & Control Bar */}
       <div className="mt-4 flex flex-col gap-3">
-        <div className="flex items-center justify-between text-xs text-slate-300">
-          <span>Brush Size</span>
+        <div className="flex items-center justify-between text-xs text-slate-400">
+          <span className="text-[11px] font-mono">Stroke Width</span>
           <div className="flex items-center gap-2">
             <input
               type="range"
@@ -214,9 +210,9 @@ export const DigitCanvas: React.FC = () => {
               step="0.1"
               value={brushRadius}
               onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-              className="w-24 accent-cyan-400 cursor-pointer"
+              className="w-24 cursor-pointer"
             />
-            <span className="font-mono text-slate-400 w-6 text-right">{brushRadius}</span>
+            <span className="font-mono text-slate-400 w-5 text-right text-[11px]">{brushRadius}</span>
           </div>
         </div>
 
@@ -224,9 +220,9 @@ export const DigitCanvas: React.FC = () => {
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={clearCanvas}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-200 transition-all active:scale-95"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-xs font-medium text-slate-300 transition-all active:scale-95"
           >
-            <RotateCcw size={14} className="text-slate-400" />
+            <RotateCcw size={13} className="text-slate-400" />
             <span>Clear</span>
           </button>
 
@@ -234,21 +230,21 @@ export const DigitCanvas: React.FC = () => {
             onClick={() => setAutoCenter(!autoCenter)}
             className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-all active:scale-95 ${
               autoCenter
-                ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300'
-                : 'bg-slate-800/70 border-slate-700/60 text-slate-400'
+                ? 'bg-blue-600/20 border-blue-500/40 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
+                : 'bg-white/[0.04] border-white/[0.06] text-slate-400'
             }`}
-            title="Center of mass alignment to match MNIST training distribution"
+            title="Bounding-box centering for MNIST compatibility"
           >
-            <Crosshair size={14} />
-            <span>Auto-Center</span>
+            <Crosshair size={13} />
+            <span>Center</span>
           </button>
 
           <button
             onClick={triggerAdversarial}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/40 text-purple-300 text-xs font-medium transition-all active:scale-95"
-            title="Inject subtle adversarial perturbation to challenge the network"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/35 text-violet-300 text-xs font-medium transition-all active:scale-95 shadow-[0_0_12px_rgba(139,92,246,0.15)]"
+            title="Fast Gradient Sign perturbation"
           >
-            <Zap size={14} className="text-purple-400" />
+            <Zap size={13} className="text-violet-400" />
             <span>Nudge</span>
           </button>
         </div>

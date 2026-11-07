@@ -9,25 +9,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        surface: {
-          DEFAULT: "#0f172a",
-          50: "#f8fafc",
-          800: "#1e293b",
-          900: "#0b0f19",
-          950: "#05070c",
+        obsidian: {
+          DEFAULT: "#08090e",
+          950: "#05060a",
+          900: "#08090e",
+          850: "#0c0e17",
+          800: "#111422",
+          700: "#181d30",
         },
-        cyber: {
-          cyan: "#00f0ff",
-          purple: "#9d4edd",
-          emerald: "#10b981",
-          amber: "#f59e0b",
+        accent: {
+          blue: "#3b82f6",
+          indigo: "#6366f1",
+          violet: "#8b5cf6",
+          purple: "#a855f7",
+          fuchsia: "#d946ef",
+          lavender: "#c4b5fd",
           rose: "#f43f5e",
-        }
+        },
       },
       fontFamily: {
-        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        sans: ["var(--font-sans)", "-apple-system", "BlinkMacSystemFont", "Inter", "Segoe UI", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
     },
   },
