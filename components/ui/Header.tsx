@@ -19,10 +19,24 @@ export const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-violet-600 p-[1px] shadow-[0_0_12px_rgba(139,92,246,0.3)]">
-            <div className="w-full h-full bg-[#070912] rounded-[7px] flex items-center justify-center">
-              <span className="w-2 h-2 rounded-full bg-violet-400" />
-            </div>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600/30 via-indigo-600/30 to-violet-600/30 border border-violet-500/40 p-1 flex items-center justify-center shadow-[0_0_15px_-3px_rgba(139,92,246,0.35)]">
+            <svg
+              viewBox="0 0 24 24"
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+            >
+              <circle cx="5" cy="6" r="2" className="fill-blue-500/50 stroke-blue-400" />
+              <circle cx="5" cy="18" r="2" className="fill-blue-500/50 stroke-blue-400" />
+              <circle cx="12" cy="12" r="2" className="fill-indigo-500/60 stroke-indigo-300" />
+              <circle cx="19" cy="7" r="2" className="fill-violet-500/60 stroke-violet-300" />
+              <circle cx="19" cy="17" r="2" className="fill-violet-500/60 stroke-violet-300" />
+              <path
+                d="M7 7.2L10 10.8M7 16.8L10 13.2M14 10.8L17 8.2M14 13.2L17 15.8"
+                className="stroke-violet-300/40"
+              />
+            </svg>
           </div>
 
           <div>

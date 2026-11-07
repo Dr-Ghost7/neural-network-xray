@@ -15,11 +15,15 @@ body {
   user-select: none;
 }
 
-/* Subtle, organic atmospheric backdrop */
+/* Studio grid with organic atmospheric lighting */
 .ambient-canvas {
-  background: radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.03) 40%, transparent 70%),
-              radial-gradient(circle at 85% 75%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
-              #08090e;
+  background-color: #08090e;
+  background-image: 
+    radial-gradient(circle at 50% 12%, rgba(139, 92, 246, 0.12) 0%, transparent 55%),
+    radial-gradient(circle at 85% 75%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
 }
 
 /* Custom minimal sliders */
