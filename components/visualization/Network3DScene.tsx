@@ -138,13 +138,24 @@ export const Network3DScene: React.FC = () => {
       }
     }
 
-    // 2. Hidden Layer 1 updates (Indigo / Violet)
+    // 2. Hidden Layer 1 updates (Indigo / Violet + dynamic active swelling)
     if (h1MeshRef.current && result) {
       const h1Act = result.activations.hidden1;
+      let matrixNeedsUpdate = false;
       for (let i = 0; i < 64; i++) {
         const isDamaged = damagedNeurons.hidden1.has(i);
         const isSelected = selectedNeuron?.layer === 'hidden1' && selectedNeuron.index === i;
-        const act = Math.min(1.0, (h1Act[i] || 0) * 0.45);
+        const rawAct = h1Act[i] || 0;
+        const act = Math.min(1.0, rawAct * 0.45);
+
+        // Dynamically scale active nodes so they swell into visible beacons in 3D
+        const p = h1Positions[i];
+        dummy.position.set(p[0], p[1], p[2]);
+        const scale = isDamaged ? 0.75 : isSelected ? 1.4 : rawAct > 0.3 ? 1.0 + Math.min(0.45, rawAct * 0.22) : 1.0;
+        dummy.scale.set(scale, scale, scale);
+        dummy.updateMatrix();
+        h1MeshRef.current.setMatrixAt(i, dummy.matrix);
+        matrixNeedsUpdate = true;
 
         if (isDamaged) {
           tempColor.copy(COLOR_SEVERED);
@@ -157,18 +168,31 @@ export const Network3DScene: React.FC = () => {
         }
         h1MeshRef.current.setColorAt(i, tempColor);
       }
+      if (matrixNeedsUpdate) {
+        h1MeshRef.current.instanceMatrix.needsUpdate = true;
+      }
       if (h1MeshRef.current.instanceColor) {
         h1MeshRef.current.instanceColor.needsUpdate = true;
       }
     }
 
-    // 3. Hidden Layer 2 updates (Violet / Purple)
+    // 3. Hidden Layer 2 updates (Violet / Purple + dynamic active swelling)
     if (h2MeshRef.current && result) {
       const h2Act = result.activations.hidden2;
+      let matrixNeedsUpdate = false;
       for (let i = 0; i < 32; i++) {
         const isDamaged = damagedNeurons.hidden2.has(i);
         const isSelected = selectedNeuron?.layer === 'hidden2' && selectedNeuron.index === i;
-        const act = Math.min(1.0, (h2Act[i] || 0) * 0.45);
+        const rawAct = h2Act[i] || 0;
+        const act = Math.min(1.0, rawAct * 0.45);
+
+        const p = h2Positions[i];
+        dummy.position.set(p[0], p[1], p[2]);
+        const scale = isDamaged ? 0.75 : isSelected ? 1.4 : rawAct > 0.3 ? 1.0 + Math.min(0.45, rawAct * 0.22) : 1.0;
+        dummy.scale.set(scale, scale, scale);
+        dummy.updateMatrix();
+        h2MeshRef.current.setMatrixAt(i, dummy.matrix);
+        matrixNeedsUpdate = true;
 
         if (isDamaged) {
           tempColor.copy(COLOR_SEVERED);
@@ -180,6 +204,9 @@ export const Network3DScene: React.FC = () => {
           tempColor.copy(COLOR_IDLE);
         }
         h2MeshRef.current.setColorAt(i, tempColor);
+      }
+      if (matrixNeedsUpdate) {
+        h2MeshRef.current.instanceMatrix.needsUpdate = true;
       }
       if (h2MeshRef.current.instanceColor) {
         h2MeshRef.current.instanceColor.needsUpdate = true;
@@ -213,7 +240,6 @@ export const Network3DScene: React.FC = () => {
           const p2 = h1Positions[h1Idx];
 
           linePositions.push(p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
-          // Blue to Violet filament
           lineColors.push(0.23, 0.51, 0.96, 0.54, 0.36, 0.96);
         }
       }
@@ -231,7 +257,6 @@ export const Network3DScene: React.FC = () => {
         for (let k = 0; k < Math.min(activeH2.length, 8); k++) {
           const p2 = h2Positions[activeH2[k]];
           linePositions.push(p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
-          // Violet to Purple filament
           lineColors.push(0.54, 0.36, 0.96, 0.75, 0.52, 0.98);
         }
       }
@@ -242,7 +267,6 @@ export const Network3DScene: React.FC = () => {
       for (let k = 0; k < activeH2.length; k++) {
         const p2 = h2Positions[activeH2[k]];
         linePositions.push(p2[0], p2[1], p2[2], outP[0], outP[1], outP[2]);
-        // Purple to Lavender filament into winning digit
         lineColors.push(0.75, 0.52, 0.98, 0.88, 0.75, 1.0);
       }
 
@@ -268,17 +292,17 @@ export const Network3DScene: React.FC = () => {
         target={[0, 0, 0]}
       />
 
-      {/* Elegant, low-profile layer markers */}
-      <Text position={[-14, 6.2, 0]} fontSize={0.52} color="#64748b" anchorX="center" font={undefined}>
+      {/* Layer markers */}
+      <Text position={[-14, 6.2, 0]} fontSize={0.52} color="#64748b" anchorX="center">
         INPUT · 784
       </Text>
-      <Text position={[-5, 5.2, 0]} fontSize={0.52} color="#6366f1" anchorX="center" font={undefined}>
+      <Text position={[-5, 5.2, 0]} fontSize={0.52} color="#6366f1" anchorX="center">
         HIDDEN · 64
       </Text>
-      <Text position={[5, 5.6, 0]} fontSize={0.52} color="#8b5cf6" anchorX="center" font={undefined}>
+      <Text position={[5, 5.6, 0]} fontSize={0.52} color="#8b5cf6" anchorX="center">
         HIDDEN · 32
       </Text>
-      <Text position={[14, 6.6, 0]} fontSize={0.52} color="#c084fc" anchorX="center" font={undefined}>
+      <Text position={[14, 6.6, 0]} fontSize={0.52} color="#c084fc" anchorX="center">
         OUTPUT · 10
       </Text>
 
