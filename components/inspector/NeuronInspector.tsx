@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useNetworkStore } from '@/lib/store/useNetworkStore';
-import { ShieldAlert, Wrench, X, Eye, Flame } from 'lucide-react';
+import { ShieldAlert, Wrench, X } from 'lucide-react';
 
 export const NeuronInspector: React.FC = () => {
   const {
@@ -36,24 +36,6 @@ export const NeuronInspector: React.FC = () => {
       currentActivation = result.activations.output[index] || 0;
     }
   }
-
-  // Find top firing neurons in Hidden Layers to make ablation experimentation effortless
-  const topActiveHidden = useMemo(() => {
-    if (!result) return [];
-    const items: { layer: 'hidden1' | 'hidden2'; index: number; activation: number }[] = [];
-
-    const h1 = result.activations.hidden1;
-    for (let i = 0; i < 64; i++) {
-      if (h1[i] > 0.1) items.push({ layer: 'hidden1', index: i, activation: h1[i] });
-    }
-
-    const h2 = result.activations.hidden2;
-    for (let i = 0; i < 32; i++) {
-      if (h2[i] > 0.1) items.push({ layer: 'hidden2', index: i, activation: h2[i] });
-    }
-
-    return items.sort((a, b) => b.activation - a.activation).slice(0, 4);
-  }, [result]);
 
   // Draw 28x28 receptive field for Hidden 1 neurons (Purple/Blue palette)
   useEffect(() => {
@@ -94,69 +76,17 @@ export const NeuronInspector: React.FC = () => {
     ctx.putImageData(imgData, 0, 0);
   }, [selectedNeuron, weights, layer, index]);
 
-  // Default view when no individual neuron is clicked: Show Top Firing Hidden Neurons for quick ablation testing!
+  // Clean, minimal state when no neuron is clicked
   if (!selectedNeuron) {
     return (
-      <div className="bg-[#0b0e19] border border-white/[0.07] rounded-2xl p-4 shadow-2xl flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-violet-400 shadow-[0_0_8px_#8b5cf6]" />
-            <h3 className="text-xs font-mono font-medium tracking-wider text-slate-200 uppercase">
-              Hidden Layer Ablation
-            </h3>
-          </div>
-          <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
-            Click any 3D node or pick a firing neuron below
-          </span>
+      <div className="bg-[#0b0e19] border border-white/[0.07] rounded-2xl p-4 shadow-2xl flex items-center justify-between text-xs text-slate-400">
+        <div className="flex items-center gap-2.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_#8b5cf6]" />
+          <span className="font-mono text-slate-300">Neuron Inspector</span>
         </div>
-
-        {/* Top firing neurons carrying the current digit's signal */}
-        {topActiveHidden.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {topActiveHidden.map((item) => {
-              const damaged = damagedNeurons[item.layer].has(item.index);
-              const label = item.layer === 'hidden1' ? `H1 #${item.index}` : `H2 #${item.index}`;
-
-              return (
-                <div
-                  key={`${item.layer}-${item.index}`}
-                  className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs transition-all ${
-                    damaged
-                      ? 'border-rose-900/40 bg-rose-950/20 text-rose-300'
-                      : 'border-white/[0.05] bg-black/30 hover:border-violet-500/30'
-                  }`}
-                >
-                  <button
-                    onClick={() => setSelectedNeuron({ layer: item.layer, index: item.index })}
-                    className="flex items-center gap-2 text-left hover:text-white"
-                    title="Inspect receptive weights and activations"
-                  >
-                    <Flame size={12} className={damaged ? 'text-rose-400' : 'text-violet-400'} />
-                    <span className="font-mono font-semibold">{label}</span>
-                    <span className="text-[10px] font-mono text-slate-400">
-                      ({item.activation.toFixed(2)})
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => toggleDamageNeuron(item.layer, item.index)}
-                    className={`text-[11px] font-mono px-2 py-0.5 rounded transition ${
-                      damaged
-                        ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30'
-                        : 'bg-white/[0.06] text-slate-300 hover:bg-rose-500/20 hover:text-rose-300'
-                    }`}
-                  >
-                    {damaged ? 'Severed' : 'Sever'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-xs text-slate-400 font-mono py-1">
-            Draw a digit on the canvas to see which hidden neurons fire and test severing them.
-          </p>
-        )}
+        <span className="text-[11px] font-mono text-slate-400">
+          Click any neuron in the 3D scene to inspect or sever
+        </span>
       </div>
     );
   }
@@ -242,7 +172,7 @@ export const NeuronInspector: React.FC = () => {
           ) : (
             <>
               <ShieldAlert size={13} />
-              <span>Sever Hidden Neuron #{index}</span>
+              <span>Sever Neuron</span>
             </>
           )}
         </button>
