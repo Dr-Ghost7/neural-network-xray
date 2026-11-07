@@ -2,6 +2,9 @@
 
 An interactive 3D WebGL visualizer and ablation sandbox for real-time neural network inference running directly in the browser.
 
+[**Explore Live Demo →**](https://neural-network-xray-98rk-tau.vercel.app)
+
+[![Live Demo](https://img.shields.io/badge/Demo-Vercel-black?style=flat-square&logo=vercel)](https://neural-network-xray-98rk-tau.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-R3F-blue?style=flat-square&logo=three.js)](https://docs.pmnd.rs/react-three-fiber)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
@@ -116,7 +119,7 @@ npm install
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser (or check your terminal for `http://localhost:3001` if port 3000 is in use).
 
 ---
 
